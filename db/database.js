@@ -1,6 +1,6 @@
 // Shared Postgres connection pool (works with Vercel Postgres, Neon,
 // Supabase, Railway Postgres — anything that gives you a standard
-// connection string in DATABASE_URL).
+// connection string).
 //
 // Unlike the old SQLite file, Postgres lives on a real database server,
 // so it works correctly on serverless hosts like Vercel where the
@@ -8,13 +8,29 @@
 
 const { Pool } = require("pg");
 
-const connectionString = process.env.DATABASE_URL;
+// Different Postgres providers (and Vercel's own integrations) land their
+// connection string under different env var names. Check them in order so
+// this works regardless of which one you used, without you having to
+// rename anything.
+const ENV_CANDIDATES = [
+  "DATABASE_URL",
+  "POSTGRES_URL",
+  "POSTGRES_PRISMA_URL",
+  "POSTGRES_URL_NON_POOLING",
+];
+
+const foundKey = ENV_CANDIDATES.find((key) => process.env[key]);
+const connectionString = foundKey ? process.env[foundKey] : undefined;
 
 if (!connectionString) {
   console.warn(
-    "\n⚠️  DATABASE_URL is not set — the app cannot connect to Postgres.\n" +
-      "   Set it in your .env (local) or in your Vercel project's Environment Variables.\n"
+    "\n⚠️  No Postgres connection string found. Checked: " +
+      ENV_CANDIDATES.join(", ") +
+      "\n   Set one of these in your .env (local) or your Vercel project's Environment Variables,\n" +
+      "   then redeploy — Vercel does not pick up new/changed env vars on an existing deployment.\n"
   );
+} else {
+  console.log(`Using Postgres connection string from ${foundKey}`);
 }
 
 const pool = new Pool({
