@@ -41,4 +41,8 @@ const pool = new Pool({
   max: 5,
 });
 
+// Exposed so other modules (the debug error handler in app.js) can report
+// which env var was actually used, without printing the secret itself.
+pool.envKeyUsed = foundKey || null;
+
 module.exports = pool;

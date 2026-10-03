@@ -14,6 +14,7 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "change-this-to-a-long
 }
 
 const { init } = require("./db/init");
+const pool = require("./db/database");
 const { attachUser } = require("./middleware/auth");
 
 const app = express();
@@ -36,7 +37,15 @@ app.use(async (req, res, next) => {
     next();
   } catch (err) {
     console.error("Database init failed:", err);
-    res.status(500).json({ error: "Database is not reachable. Check DATABASE_URL." });
+    // TEMPORARY while setting up: show the real error + which env var was
+    // used, so you can see exactly what's wrong instead of a generic
+    // message. Once things work, you can remove `detail` and `envKeyUsed`
+    // below so real errors aren't exposed to visitors.
+    res.status(500).json({
+      error: "Database is not reachable.",
+      detail: err.message,
+      envKeyUsed: pool.envKeyUsed,
+    });
   }
 });
 
